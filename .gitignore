@@ -4,5 +4,7 @@ dist/
 *.db-shm
 *.db-wal
 .env
+.env.local
 .DS_Store
 Thumbs.db
+.vercel
