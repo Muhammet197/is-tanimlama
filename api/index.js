@@ -8,6 +8,18 @@ function getPool() {
   return new Pool({ connectionString: process.env.DATABASE_URL });
 }
 
+// ---------- HEALTH ----------
+app.get('/api/health', async (req, res) => {
+  try {
+    const pool = getPool();
+    const result = await pool.query('SELECT 1 as test');
+    await pool.end();
+    res.json({ status: 'ok', db: 'connected' });
+  } catch (e) {
+    res.json({ status: 'error', message: e.message, dbUrl: process.env.DATABASE_URL?.substring(0, 40) });
+  }
+});
+
 // ---------- INIT ----------
 app.post('/api/init', async (req, res) => {
   const pool = getPool();
