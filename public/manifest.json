@@ -1,0 +1,31 @@
+{
+  "name": "İş Tanımlama Sistemi",
+  "short_name": "İş Tanımlama",
+  "description": "Operasyonel Runbook Sistemi - İş tanımları, adımlar, bağımlılıklar ve ekip yönetimi",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
+  "orientation": "any",
+  "categories": ["productivity", "business"],
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Yeni İş Ekle",
+      "short_name": "Yeni İş",
+      "url": "/jobs/new"
+    },
+    {
+      "name": "Bağımlılık Haritası",
+      "short_name": "Harita",
+      "url": "/graph"
+    }
+  ]
+}
