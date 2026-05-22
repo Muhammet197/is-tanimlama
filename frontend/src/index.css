@@ -419,7 +419,181 @@ body {
 .stat-label { font-size: 13px; color: var(--text-light); margin-top: 4px; }
 
 /* Graph */
-.graph-container { width: 100%; height: calc(100vh - 140px); border: 1px solid var(--border); border-radius: var(--radius); background: #fff; }
+.graph-container {
+  width: 100%;
+  height: calc(100vh - 260px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Graph Stats Bar */
+.graph-stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.graph-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+  box-shadow: var(--shadow);
+  min-width: 100px;
+}
+
+.graph-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.graph-stat-label {
+  font-size: 12px;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+/* Graph Toolbar / Filters */
+.graph-toolbar {
+  margin-bottom: 16px;
+}
+
+.graph-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  box-shadow: var(--shadow);
+}
+
+.graph-filters .filter-select {
+  padding: 5px 10px;
+  font-size: 13px;
+  min-width: 140px;
+}
+
+/* Graph Legend */
+.graph-legend {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  box-shadow: var(--shadow-lg);
+  font-size: 12px;
+  z-index: 10;
+  backdrop-filter: blur(6px);
+  max-width: 200px;
+}
+
+.graph-legend-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-light);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.graph-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.graph-legend-line {
+  width: 18px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Graph Edge Popup */
+.graph-edge-popup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  text-align: center;
+  min-width: 200px;
+  animation: fadeScaleIn 0.15s ease-out;
+}
+
+@keyframes fadeScaleIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.92); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Graph Detail Panel */
+.graph-detail-panel {
+  width: 300px;
+  min-width: 300px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-lg);
+  height: calc(100vh - 260px);
+  overflow-y: auto;
+  animation: slideInRight 0.2s ease-out;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.graph-detail-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.graph-detail-info {
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.graph-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.graph-detail-row svg {
+  color: var(--text-light);
+  flex-shrink: 0;
+}
 
 /* Modal */
 .modal-overlay {
@@ -467,4 +641,11 @@ body {
   .main-content { margin-left: 0; padding: 16px; }
   .form-row { grid-template-columns: 1fr; }
   .job-grid { grid-template-columns: 1fr; }
+  .graph-stats { gap: 8px; }
+  .graph-stat { padding: 8px 12px; min-width: 80px; }
+  .graph-stat-value { font-size: 18px; }
+  .graph-filters { flex-direction: column; align-items: stretch; }
+  .graph-filters .filter-select { min-width: auto; }
+  .graph-detail-panel { width: 100%; min-width: auto; height: auto; max-height: 50vh; }
+  .graph-legend { bottom: 8px; right: 8px; padding: 8px 12px; }
 }
