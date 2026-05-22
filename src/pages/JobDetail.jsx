@@ -35,10 +35,29 @@ export default function JobDetail() {
 
   const handleExportPDF = () => {
     const html = generatePrintHTML(job);
-    const w = window.open('', '_blank', 'width=900,height=700');
-    w.document.write(html);
-    w.document.close();
-    w.onload = () => setTimeout(() => w.print(), 300);
+    // Embed auto-print script inside the HTML
+    const printHtml = html.replace(
+      '</body>',
+      `<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},400)})<\/script></body>`
+    );
+    const blob = new Blob([printHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url, '_blank');
+
+    if (!w) {
+      // Fallback: hidden iframe print
+      const frame = document.createElement('iframe');
+      frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:none;';
+      document.body.appendChild(frame);
+      frame.contentDocument.open();
+      frame.contentDocument.write(html);
+      frame.contentDocument.close();
+      setTimeout(() => {
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+        setTimeout(() => document.body.removeChild(frame), 1000);
+      }, 500);
+    }
   };
 
   return (
