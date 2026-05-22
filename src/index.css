@@ -27,31 +27,90 @@
   --bg: #0f172a;
   --bg-card: #1e293b;
   --bg-sidebar: #0b1120;
-  --bg-input: #334155;
+  --bg-input: #1e293b;
   --text: #e2e8f0;
   --text-light: #94a3b8;
   --text-sidebar: #cbd5e1;
-  --border: #334155;
+  --border: #475569;
   --primary: #60a5fa;
   --primary-hover: #93c5fd;
-  --shadow: 0 1px 3px rgba(0,0,0,0.4);
-  --shadow-lg: 0 4px 12px rgba(0,0,0,0.5);
+  --success: #34d399;
+  --warning: #fbbf24;
+  --danger: #f87171;
+  --shadow: 0 1px 3px rgba(0,0,0,0.5);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.6);
 }
 
+/* Dark: Buttons */
+[data-theme="dark"] .btn-primary { background: #3b82f6; color: #fff; }
+[data-theme="dark"] .btn-primary:hover { background: #60a5fa; color: #fff; }
+[data-theme="dark"] .btn-secondary { background: #334155; color: #e2e8f0; border-color: #475569; }
+[data-theme="dark"] .btn-secondary:hover { background: #475569; color: #fff; }
+[data-theme="dark"] .btn-danger { background: #dc2626; color: #fff; }
+[data-theme="dark"] .btn-danger:hover { background: #ef4444; }
+[data-theme="dark"] .btn-icon { color: #94a3b8; }
+[data-theme="dark"] .btn-icon:hover { background: #334155; color: #e2e8f0; }
+
+/* Dark: Badges */
 [data-theme="dark"] .badge-easy { background: #065f46; color: #6ee7b7; }
 [data-theme="dark"] .badge-medium { background: #78350f; color: #fcd34d; }
 [data-theme="dark"] .badge-hard { background: #7f1d1d; color: #fca5a5; }
 [data-theme="dark"] .badge-group { background: #1e3a5f; color: #93c5fd; }
 [data-theme="dark"] .badge-env { background: #334155; color: #cbd5e1; }
-[data-theme="dark"] .step-tip { background: #064e3b; color: #6ee7b7; border-left-color: #10b981; }
-[data-theme="dark"] .step-warning { background: #450a0a; color: #fca5a5; border-left-color: #ef4444; }
+
+/* Dark: Steps & Tips */
+[data-theme="dark"] .step-tip { background: #064e3b; color: #6ee7b7; border-left-color: #34d399; }
+[data-theme="dark"] .step-warning { background: #450a0a; color: #fca5a5; border-left-color: #f87171; }
+
+/* Dark: Cards, Panels, Items */
 [data-theme="dark"] .info-item { background: #0f172a; }
-[data-theme="dark"] .step-form-item { background: #0f172a; }
+[data-theme="dark"] .step-form-item { background: #0f172a; border-color: #475569; }
 [data-theme="dark"] .dep-item { background: #0f172a; }
-[data-theme="dark"] .dep-item:hover { background: #1e293b; }
+[data-theme="dark"] .dep-item:hover { background: #334155; }
+[data-theme="dark"] .job-card { background: #1e293b; border-color: #475569; }
+[data-theme="dark"] .job-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.5); }
+[data-theme="dark"] .group-card { background: #1e293b; border-color: #475569; }
+[data-theme="dark"] .stat-card { background: #1e293b; border-color: #475569; }
+
+/* Dark: Forms & Inputs */
+[data-theme="dark"] .filter-select { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+[data-theme="dark"] .search-input { background: #1e293b; color: #e2e8f0; border-color: #475569; }
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group textarea,
+[data-theme="dark"] .form-group select { background: #0f172a; color: #e2e8f0; border-color: #475569; }
+[data-theme="dark"] .form-group input::placeholder,
+[data-theme="dark"] .form-group textarea::placeholder { color: #64748b; }
+
+/* Dark: Tags */
+[data-theme="dark"] .tag { background: #334155; color: #cbd5e1; }
+[data-theme="dark"] .tag button { color: #94a3b8; }
+
+/* Dark: Modal */
+[data-theme="dark"] .modal { background: #1e293b; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+[data-theme="dark"] .modal-overlay { background: rgba(0,0,0,0.6); }
+
+/* Dark: Graph */
 [data-theme="dark"] .graph-container { background: #1e293b; }
-[data-theme="dark"] .graph-legend { background: rgba(30,41,59,0.95); }
-[data-theme="dark"] .graph-edge-popup { background: #1e293b; }
+[data-theme="dark"] .graph-legend { background: rgba(15,23,42,0.95); border-color: #475569; }
+[data-theme="dark"] .graph-edge-popup { background: #1e293b; border-color: #475569; }
+[data-theme="dark"] .graph-detail-panel { background: #1e293b; border-color: #475569; }
+[data-theme="dark"] .graph-stat { background: #1e293b; border-color: #475569; }
+[data-theme="dark"] .graph-filters { background: #1e293b; border-color: #475569; }
+
+/* Dark: Table */
+[data-theme="dark"] .history-table th { border-bottom-color: #475569; color: #94a3b8; }
+[data-theme="dark"] .history-table td { border-bottom-color: #334155; }
+
+/* Dark: Checklist */
+[data-theme="dark"] .checklist input[type="checkbox"] { accent-color: #60a5fa; }
+
+/* Dark: Empty State */
+[data-theme="dark"] .empty-state { color: #64748b; }
+[data-theme="dark"] .empty-state h3 { color: #cbd5e1; }
+
+/* Dark: Screenshot */
+[data-theme="dark"] .screenshot-preview { border-color: #475569; }
+[data-theme="dark"] .step-screenshot { border-color: #475569; }
 
 body {
   font-family: 'Inter', -apple-system, sans-serif;
@@ -264,6 +323,8 @@ body {
   font-size: 14px;
   outline: none;
   transition: border-color 0.15s;
+  background-color: var(--bg-card);
+  color: var(--text);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: 10px center;
@@ -277,7 +338,8 @@ body {
   border-radius: var(--radius);
   font-size: 14px;
   outline: none;
-  background: #fff;
+  background: var(--bg-card);
+  color: var(--text);
   cursor: pointer;
 }
 
@@ -346,7 +408,7 @@ body {
   border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 12px;
-  background: #fafbfc;
+  background: var(--bg);
 }
 
 .step-form-header {
@@ -368,7 +430,7 @@ body {
   margin-bottom: 24px;
 }
 
-.info-item { padding: 16px; background: #f8fafc; border-radius: var(--radius); }
+.info-item { padding: 16px; background: var(--bg); border-radius: var(--radius); }
 .info-label { font-size: 12px; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
 .info-value { font-size: 16px; font-weight: 600; margin-top: 4px; }
 
@@ -387,13 +449,13 @@ body {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  background: #f8fafc;
+  background: var(--bg);
   border-radius: var(--radius);
   text-decoration: none;
-  color: inherit;
+  color: var(--text);
   transition: background 0.15s;
 }
-.dep-item:hover { background: #f1f5f9; }
+.dep-item:hover { background: var(--bg-card); }
 .dep-type { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
 
 /* Checklist */
@@ -458,7 +520,7 @@ body {
   height: calc(100vh - 260px);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: #fff;
+  background: var(--bg-card);
   position: relative;
   overflow: hidden;
 }
@@ -567,7 +629,7 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: #fff;
+  background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 16px 20px;
@@ -641,14 +703,15 @@ body {
 }
 
 .modal {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 28px;
   max-width: 600px;
   width: 90%;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+  box-shadow: var(--shadow-lg);
+  color: var(--text);
 }
 
 .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
@@ -656,7 +719,7 @@ body {
 
 /* Tags input */
 .tags-container { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: #f1f5f9; border-radius: 12px; font-size: 13px; }
+.tag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; background: var(--bg); border-radius: 12px; font-size: 13px; color: var(--text); }
 .tag button { background: none; border: none; cursor: pointer; font-size: 14px; color: var(--text-light); padding: 0; line-height: 1; }
 
 /* Empty state */
@@ -767,16 +830,4 @@ body {
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
 }
 
-/* Filter select dark mode */
-[data-theme="dark"] .filter-select {
-  background: var(--bg-input);
-  color: var(--text);
-  border-color: var(--border);
-}
-[data-theme="dark"] .search-input {
-  background: var(--bg-input);
-  color: var(--text);
-  border-color: var(--border);
-}
-[data-theme="dark"] .tag { background: #334155; color: #cbd5e1; }
-[data-theme="dark"] .modal { background: #1e293b; }
+/* (dark mode overrides consolidated in main dark section above) */
