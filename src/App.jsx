@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ClipboardList, FolderOpen, GitBranch, Plus } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, FolderOpen, GitBranch, Plus, Moon, Sun } from 'lucide-react';
 import Home from './pages/Home';
 import Jobs from './pages/Jobs';
 import JobDetail from './pages/JobDetail';
@@ -9,6 +10,12 @@ import GraphView from './pages/GraphView';
 
 export default function App() {
   const location = useLocation();
+  const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark');
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    localStorage.setItem('theme', dark ? 'dark' : 'light');
+  }, [dark]);
 
   return (
     <div className="app-layout">
@@ -41,6 +48,13 @@ export default function App() {
             <Plus size={18} /> Yeni Is Ekle
           </NavLink>
         </nav>
+
+        <div style={{ flex: 1 }} />
+
+        <button className="theme-toggle" onClick={() => setDark(!dark)}>
+          {dark ? <Sun size={18} /> : <Moon size={18} />}
+          {dark ? 'Acik Mod' : 'Koyu Mod'}
+        </button>
       </aside>
 
       <main className="main-content">

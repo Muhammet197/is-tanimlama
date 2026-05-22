@@ -91,11 +91,11 @@ router.post('/', (req, res) => {
 
   if (steps && steps.length > 0) {
     const insertStep = db.prepare(`
-      INSERT INTO steps (job_id, order_num, title, environment, description, tip, warning)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO steps (job_id, order_num, title, environment, description, tip, warning, screenshot_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     steps.forEach((step, i) => {
-      insertStep.run(jobId, i + 1, step.title, step.environment, step.description, step.tip, step.warning);
+      insertStep.run(jobId, i + 1, step.title, step.environment, step.description, step.tip, step.warning, step.screenshot_url || null);
     });
   }
 
@@ -122,11 +122,11 @@ router.put('/:id', (req, res) => {
   if (steps) {
     db.prepare('DELETE FROM steps WHERE job_id = ?').run(req.params.id);
     const insertStep = db.prepare(`
-      INSERT INTO steps (job_id, order_num, title, environment, description, tip, warning)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO steps (job_id, order_num, title, environment, description, tip, warning, screenshot_url)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     steps.forEach((step, i) => {
-      insertStep.run(req.params.id, i + 1, step.title, step.environment, step.description, step.tip, step.warning);
+      insertStep.run(req.params.id, i + 1, step.title, step.environment, step.description, step.tip, step.warning, step.screenshot_url || null);
     });
   }
 

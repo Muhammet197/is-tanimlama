@@ -43,6 +43,7 @@ db.exec(`
     description TEXT,
     tip TEXT,
     warning TEXT,
+    screenshot_url TEXT,
     FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE
   );
 

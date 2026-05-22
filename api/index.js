@@ -58,9 +58,12 @@ app.post('/api/init', async (req, res) => {
       environment TEXT,
       description TEXT,
       tip TEXT,
-      warning TEXT
+      warning TEXT,
+      screenshot_url TEXT
     )
   `);
+  // Add screenshot_url column if table already exists
+  await pool.query(`ALTER TABLE steps ADD COLUMN IF NOT EXISTS screenshot_url TEXT`).catch(() => {});
   await pool.query(`
     CREATE TABLE IF NOT EXISTS dependencies (
       id SERIAL PRIMARY KEY,
@@ -216,8 +219,8 @@ app.post('/api/jobs', async (req, res) => {
     for (let i = 0; i < steps.length; i++) {
       const s = steps[i];
       await pool.query(
-        'INSERT INTO steps (job_id, order_num, title, environment, description, tip, warning) VALUES ($1,$2,$3,$4,$5,$6,$7)',
-        [jobId, i + 1, s.title, s.environment, s.description, s.tip, s.warning]
+        'INSERT INTO steps (job_id, order_num, title, environment, description, tip, warning, screenshot_url) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+        [jobId, i + 1, s.title, s.environment, s.description, s.tip, s.warning, s.screenshot_url || null]
       );
     }
   }
@@ -244,8 +247,8 @@ app.put('/api/jobs/:id', async (req, res) => {
     for (let i = 0; i < steps.length; i++) {
       const s = steps[i];
       await pool.query(
-        'INSERT INTO steps (job_id, order_num, title, environment, description, tip, warning) VALUES ($1,$2,$3,$4,$5,$6,$7)',
-        [req.params.id, i + 1, s.title, s.environment, s.description, s.tip, s.warning]
+        'INSERT INTO steps (job_id, order_num, title, environment, description, tip, warning, screenshot_url) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+        [req.params.id, i + 1, s.title, s.environment, s.description, s.tip, s.warning, s.screenshot_url || null]
       );
     }
   }

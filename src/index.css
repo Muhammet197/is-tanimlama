@@ -6,6 +6,7 @@
   --bg: #f8fafc;
   --bg-card: #ffffff;
   --bg-sidebar: #1e293b;
+  --bg-input: #ffffff;
   --text: #1e293b;
   --text-light: #64748b;
   --text-sidebar: #e2e8f0;
@@ -20,6 +21,37 @@
   --shadow: 0 1px 3px rgba(0,0,0,0.08);
   --shadow-lg: 0 4px 12px rgba(0,0,0,0.1);
 }
+
+/* Dark Mode */
+[data-theme="dark"] {
+  --bg: #0f172a;
+  --bg-card: #1e293b;
+  --bg-sidebar: #0b1120;
+  --bg-input: #334155;
+  --text: #e2e8f0;
+  --text-light: #94a3b8;
+  --text-sidebar: #cbd5e1;
+  --border: #334155;
+  --primary: #60a5fa;
+  --primary-hover: #93c5fd;
+  --shadow: 0 1px 3px rgba(0,0,0,0.4);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+[data-theme="dark"] .badge-easy { background: #065f46; color: #6ee7b7; }
+[data-theme="dark"] .badge-medium { background: #78350f; color: #fcd34d; }
+[data-theme="dark"] .badge-hard { background: #7f1d1d; color: #fca5a5; }
+[data-theme="dark"] .badge-group { background: #1e3a5f; color: #93c5fd; }
+[data-theme="dark"] .badge-env { background: #334155; color: #cbd5e1; }
+[data-theme="dark"] .step-tip { background: #064e3b; color: #6ee7b7; border-left-color: #10b981; }
+[data-theme="dark"] .step-warning { background: #450a0a; color: #fca5a5; border-left-color: #ef4444; }
+[data-theme="dark"] .info-item { background: #0f172a; }
+[data-theme="dark"] .step-form-item { background: #0f172a; }
+[data-theme="dark"] .dep-item { background: #0f172a; }
+[data-theme="dark"] .dep-item:hover { background: #1e293b; }
+[data-theme="dark"] .graph-container { background: #1e293b; }
+[data-theme="dark"] .graph-legend { background: rgba(30,41,59,0.95); }
+[data-theme="dark"] .graph-edge-popup { background: #1e293b; }
 
 body {
   font-family: 'Inter', -apple-system, sans-serif;
@@ -260,6 +292,8 @@ body {
   font-size: 14px;
   outline: none;
   font-family: inherit;
+  background: var(--bg-input);
+  color: var(--text);
 }
 .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
   border-color: var(--primary);
@@ -648,4 +682,101 @@ body {
   .graph-filters .filter-select { min-width: auto; }
   .graph-detail-panel { width: 100%; min-width: auto; height: auto; max-height: 50vh; }
   .graph-legend { bottom: 8px; right: 8px; padding: 8px 12px; }
+  .export-actions { flex-direction: column; }
 }
+
+/* Theme toggle */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  color: #cbd5e1;
+  font-size: 14px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  width: 100%;
+  text-align: left;
+  margin-top: 8px;
+}
+.theme-toggle:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+/* Export actions */
+.export-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Screenshot in steps */
+.step-screenshot {
+  margin-top: 10px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.step-screenshot img {
+  max-width: 100%;
+  display: block;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.step-screenshot img:hover { opacity: 0.9; }
+
+/* Screenshot URL input in form */
+.screenshot-input-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.screenshot-input-row input[type="text"] {
+  flex: 1;
+}
+.screenshot-preview {
+  margin-top: 8px;
+  max-width: 300px;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.screenshot-preview img {
+  max-width: 100%;
+  display: block;
+}
+
+/* Lightbox overlay */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  cursor: pointer;
+  padding: 40px;
+}
+.lightbox-overlay img {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+/* Filter select dark mode */
+[data-theme="dark"] .filter-select {
+  background: var(--bg-input);
+  color: var(--text);
+  border-color: var(--border);
+}
+[data-theme="dark"] .search-input {
+  background: var(--bg-input);
+  color: var(--text);
+  border-color: var(--border);
+}
+[data-theme="dark"] .tag { background: #334155; color: #cbd5e1; }
+[data-theme="dark"] .modal { background: #1e293b; }

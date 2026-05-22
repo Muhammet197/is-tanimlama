@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Edit, Trash2, ArrowLeft, ArrowRight, Clock, User, FolderOpen } from 'lucide-react';
+import { Edit, Trash2, ArrowLeft, ArrowRight, Clock, User, FolderOpen, FileText, FileDown, Printer } from 'lucide-react';
 import { api } from '../api';
+import { generateJobMarkdown, generatePrintHTML, downloadFile } from '../utils/export';
 
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [job, setJob] = useState(null);
   const [checklist, setChecklist] = useState({});
+  const [lightboxImg, setLightboxImg] = useState(null);
 
   useEffect(() => {
     api.jobs.get(id).then(setJob).catch(() => navigate('/jobs'));
@@ -25,10 +27,28 @@ export default function JobDetail() {
     }
   };
 
+  const handleExportMD = () => {
+    const md = generateJobMarkdown(job);
+    const safeName = job.title.replace(/[<>:"/\\|?*]/g, '_');
+    downloadFile(md, `${safeName}.md`);
+  };
+
+  const handleExportPDF = () => {
+    const html = generatePrintHTML(job);
+    const w = window.open('', '_blank', 'width=900,height=700');
+    w.document.write(html);
+    w.document.close();
+    w.onload = () => setTimeout(() => w.print(), 300);
+  };
+
   return (
     <div>
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
         <Link to="/jobs" className="btn btn-secondary btn-sm"><ArrowLeft size={14} /> Islere Don</Link>
+        <div className="export-actions">
+          <button onClick={handleExportMD} className="btn btn-secondary btn-sm" title="Markdown olarak indir (AI-uyumlu)"><FileText size={14} /> .md</button>
+          <button onClick={handleExportPDF} className="btn btn-secondary btn-sm" title="PDF olarak yazdir"><Printer size={14} /> PDF</button>
+        </div>
       </div>
 
       <div className="detail-header">
@@ -140,6 +160,15 @@ export default function JobDetail() {
               <div className="step-desc">{step.description}</div>
               {step.tip && <div className="step-tip">Ipucu: {step.tip}</div>}
               {step.warning && <div className="step-warning">Dikkat: {step.warning}</div>}
+              {step.screenshot_url && (
+                <div className="step-screenshot">
+                  <img
+                    src={step.screenshot_url}
+                    alt={`${step.title} ekran goruntusu`}
+                    onClick={() => setLightboxImg(step.screenshot_url)}
+                  />
+                </div>
+              )}
             </div>
           ))}
         </>
@@ -196,6 +225,13 @@ export default function JobDetail() {
             </table>
           </div>
         </>
+      )}
+
+      {/* Lightbox */}
+      {lightboxImg && (
+        <div className="lightbox-overlay" onClick={() => setLightboxImg(null)}>
+          <img src={lightboxImg} alt="Buyuk gorunum" />
+        </div>
       )}
     </div>
   );

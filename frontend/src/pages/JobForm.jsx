@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, GripVertical } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Image } from 'lucide-react';
 import { api } from '../api';
 
 export default function JobForm() {
@@ -28,7 +28,10 @@ export default function JobForm() {
           difficulty: job.difficulty || 'Orta', environments: job.environments || [],
           prerequisites: job.prerequisites || [], notes: job.notes || '', status: job.status || 'aktif'
         });
-        setSteps(job.steps || []);
+        setSteps((job.steps || []).map(s => ({
+          title: s.title || '', environment: s.environment || '', description: s.description || '',
+          tip: s.tip || '', warning: s.warning || '', screenshot_url: s.screenshot_url || ''
+        })));
       }).catch(() => navigate('/jobs'));
     }
   }, [id]);
@@ -47,7 +50,7 @@ export default function JobForm() {
   };
 
   const addStep = () => {
-    setSteps(prev => [...prev, { title: '', environment: '', description: '', tip: '', warning: '' }]);
+    setSteps(prev => [...prev, { title: '', environment: '', description: '', tip: '', warning: '', screenshot_url: '' }]);
   };
 
   const updateStep = (index, field, value) => {
@@ -56,6 +59,24 @@ export default function JobForm() {
 
   const removeStep = (index) => {
     setSteps(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleFileUpload = (index, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Dosya boyutu 2MB\'dan kucuk olmali');
+      return;
+    }
+    if (!file.type.startsWith('image/')) {
+      alert('Sadece resim dosyalari yuklenebilir');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      updateStep(index, 'screenshot_url', ev.target.result);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e) => {
@@ -149,7 +170,7 @@ export default function JobForm() {
           <h3 style={{ marginBottom: 16 }}>Ortamlar</h3>
           <div style={{ display: 'flex', gap: 8 }}>
             <input type="text" value={envInput} onChange={e => setEnvInput(e.target.value)}
-              placeholder="Ortam ekle (ornegin: Microsoft Word)" style={{ flex: 1, padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14 }}
+              placeholder="Ortam ekle (ornegin: Microsoft Word)" style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--bg-input)', color: 'var(--text)' }}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag('environments', envInput, setEnvInput); }}} />
             <button type="button" className="btn btn-secondary" onClick={() => addTag('environments', envInput, setEnvInput)}>Ekle</button>
           </div>
@@ -164,7 +185,7 @@ export default function JobForm() {
           <h3 style={{ marginBottom: 16 }}>On Kosullar</h3>
           <div style={{ display: 'flex', gap: 8 }}>
             <input type="text" value={preqInput} onChange={e => setPreqInput(e.target.value)}
-              placeholder="On kosul ekle" style={{ flex: 1, padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14 }}
+              placeholder="On kosul ekle" style={{ flex: 1, padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 14, background: 'var(--bg-input)', color: 'var(--text)' }}
               onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addTag('prerequisites', preqInput, setPreqInput); }}} />
             <button type="button" className="btn btn-secondary" onClick={() => addTag('prerequisites', preqInput, setPreqInput)}>Ekle</button>
           </div>
@@ -208,6 +229,41 @@ export default function JobForm() {
                   <label>Uyari (opsiyonel)</label>
                   <input type="text" value={step.warning || ''} onChange={e => updateStep(i, 'warning', e.target.value)} placeholder="Dikkat edilecek nokta..." />
                 </div>
+              </div>
+
+              {/* Screenshot section */}
+              <div className="form-group">
+                <label><Image size={13} style={{ marginRight: 4 }} />Ekran Goruntusu (opsiyonel)</label>
+                <div className="screenshot-input-row">
+                  <input
+                    type="text"
+                    value={step.screenshot_url || ''}
+                    onChange={e => updateStep(i, 'screenshot_url', e.target.value)}
+                    placeholder="Resim URL'si yapistir veya dosya yukle..."
+                  />
+                  <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    <Image size={13} /> Yukle
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={e => handleFileUpload(i, e)}
+                    />
+                  </label>
+                </div>
+                {step.screenshot_url && (
+                  <div className="screenshot-preview">
+                    <img src={step.screenshot_url} alt="Onizleme" onError={e => e.target.style.display = 'none'} />
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-secondary"
+                      style={{ marginTop: 4 }}
+                      onClick={() => updateStep(i, 'screenshot_url', '')}
+                    >
+                      <Trash2 size={12} /> Resmi Kaldir
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))}

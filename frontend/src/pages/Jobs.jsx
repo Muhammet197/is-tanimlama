@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, ClipboardList } from 'lucide-react';
+import { Plus, ClipboardList, Download, FileDown } from 'lucide-react';
+import JSZip from 'jszip';
 import { api } from '../api';
+import { generateJobMarkdown, generateAnaSayfa, generateGroupMarkdown, downloadFile } from '../utils/export';
 
 export default function Jobs() {
   const [jobs, setJobs] = useState([]);
@@ -9,6 +11,7 @@ export default function Jobs() {
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     api.groups.list().then(setGroups).catch(() => {});
@@ -24,11 +27,64 @@ export default function Jobs() {
 
   const difficultyMap = { 'Kolay': 'badge-easy', 'Orta': 'badge-medium', 'Karmaşık': 'badge-hard' };
 
+  const handleBulkExport = async () => {
+    setExporting(true);
+    try {
+      // Fetch all jobs with full details
+      const allJobs = await api.jobs.list({});
+      const fullJobs = await Promise.all(allJobs.map(j => api.jobs.get(j.id)));
+      const allGroups = await api.groups.list();
+
+      const zip = new JSZip();
+
+      // Ana Sayfa
+      zip.file('Ana Sayfa.md', generateAnaSayfa(allJobs, allGroups));
+
+      // Isler folder
+      const islerFolder = zip.folder('Isler');
+      fullJobs.forEach(job => {
+        const safeName = job.title.replace(/[<>:"/\\|?*]/g, '_');
+        islerFolder.file(`${safeName}.md`, generateJobMarkdown(job));
+      });
+
+      // Gruplar folder
+      const gruplarFolder = zip.folder('Gruplar');
+      allGroups.forEach(group => {
+        const safeName = group.name.replace(/[<>:"/\\|?*]/g, '_');
+        gruplarFolder.file(`${safeName}.md`, generateGroupMarkdown(group, allJobs));
+      });
+
+      // Generate and download
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'is-tanimlama-export.zip';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Disa aktarim sirasinda hata olustu: ' + err.message);
+    }
+    setExporting(false);
+  };
+
   return (
     <div>
       <div className="page-header">
         <h1>Isler</h1>
-        <Link to="/jobs/new" className="btn btn-primary"><Plus size={16} /> Yeni Is</Link>
+        <div className="export-actions">
+          <button
+            onClick={handleBulkExport}
+            className="btn btn-secondary"
+            disabled={exporting}
+            title="Tum isleri Markdown + ZIP olarak indir (Obsidian / AI uyumlu)"
+          >
+            <Download size={16} /> {exporting ? 'Hazirlaniyor...' : 'Toplu Aktar (.zip)'}
+          </button>
+          <Link to="/jobs/new" className="btn btn-primary"><Plus size={16} /> Yeni Is</Link>
+        </div>
       </div>
 
       <div className="search-bar">
