@@ -68,6 +68,15 @@ const webApi = {
     },
     persons: () => request('/logs/persons'),
   },
+  users: {
+    list: () => request('/users'),
+    get: (id) => request(`/users/${id}`),
+    create: (data) => request('/users', { method: 'POST', body: data }),
+    update: (id, data) => request(`/users/${id}`, { method: 'PUT', body: data }),
+    delete: (id) => request(`/users/${id}`, { method: 'DELETE' }),
+    login: (data) => request('/users/login', { method: 'POST', body: data }),
+    changePassword: (id, password_hash) => request(`/users/${id}/password`, { method: 'PUT', body: { password_hash } }),
+  },
 };
 
 // ─── Unified proxy: auto-detect Tauri vs Web ─────────────────────

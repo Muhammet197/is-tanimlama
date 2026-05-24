@@ -105,6 +105,29 @@ app.post('/api/init', async (req, res) => {
       completed_at TIMESTAMP
     )
   `);
+  // Users table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'editor',
+      active INTEGER DEFAULT 1,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  // Add assigned_to column to jobs
+  await pool.query(`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS assigned_to INTEGER REFERENCES users(id)`).catch(() => {});
+  // Default admin user
+  const admins = await pool.query("SELECT id FROM users WHERE username = 'admin'");
+  if (admins.rows.length === 0) {
+    const defaultHash = '9991ed489ce8a15455fc4a814a6c34843f0656cae16458f3593cb29b0eb5dfa4';
+    await pool.query(
+      "INSERT INTO users (username, password_hash, display_name, role) VALUES ('admin', $1, 'Yonetici', 'admin')",
+      [defaultHash]
+    );
+  }
   res.json({ success: true, message: 'Tablolar oluşturuldu' });
 });
 
@@ -228,13 +251,13 @@ app.get('/api/jobs/:id', async (req, res) => {
 
 app.post('/api/jobs', async (req, res) => {
   const pool = getPool();
-  const { title, responsible, group_id, period, estimated_duration, difficulty, environments, prerequisites, notes, steps } = req.body;
+  const { title, responsible, group_id, period, estimated_duration, difficulty, environments, prerequisites, notes, steps, assigned_to } = req.body;
 
   const { rows } = await pool.query(
-    `INSERT INTO jobs (title, responsible, group_id, period, estimated_duration, difficulty, environments, prerequisites, notes)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id`,
+    `INSERT INTO jobs (title, responsible, group_id, period, estimated_duration, difficulty, environments, prerequisites, notes, assigned_to)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id`,
     [title, responsible, group_id || null, period, estimated_duration, difficulty,
-     JSON.stringify(environments || []), JSON.stringify(prerequisites || []), notes]
+     JSON.stringify(environments || []), JSON.stringify(prerequisites || []), notes, assigned_to || null]
   );
   const jobId = rows[0].id;
 
@@ -256,13 +279,13 @@ app.post('/api/jobs', async (req, res) => {
 
 app.put('/api/jobs/:id', async (req, res) => {
   const pool = getPool();
-  const { title, responsible, group_id, period, estimated_duration, difficulty, environments, prerequisites, notes, status, steps } = req.body;
+  const { title, responsible, group_id, period, estimated_duration, difficulty, environments, prerequisites, notes, status, steps, assigned_to } = req.body;
 
   await pool.query(
     `UPDATE jobs SET title=$1, responsible=$2, group_id=$3, period=$4, estimated_duration=$5, difficulty=$6,
-     environments=$7, prerequisites=$8, notes=$9, status=$10, updated_at=CURRENT_TIMESTAMP WHERE id=$11`,
+     environments=$7, prerequisites=$8, notes=$9, status=$10, assigned_to=$11, updated_at=CURRENT_TIMESTAMP WHERE id=$12`,
     [title, responsible, group_id || null, period, estimated_duration, difficulty,
-     JSON.stringify(environments || []), JSON.stringify(prerequisites || []), notes, status || 'aktif', req.params.id]
+     JSON.stringify(environments || []), JSON.stringify(prerequisites || []), notes, status || 'aktif', assigned_to || null, req.params.id]
   );
 
   if (steps) {
@@ -521,6 +544,93 @@ app.get('/api/logs/persons', async (req, res) => {
   const { rows } = await pool.query('SELECT DISTINCT person FROM history ORDER BY person');
   await pool.end();
   res.json(rows);
+});
+
+// ---------- USERS ----------
+app.get('/api/users', async (req, res) => {
+  const pool = getPool();
+  const { rows } = await pool.query('SELECT id, username, display_name, role, active, created_at FROM users ORDER BY id');
+  await pool.end();
+  res.json(rows);
+});
+
+app.get('/api/users/:id', async (req, res) => {
+  const pool = getPool();
+  const { rows } = await pool.query('SELECT id, username, display_name, role, active, created_at FROM users WHERE id = $1', [req.params.id]);
+  await pool.end();
+  if (!rows[0]) return res.status(404).json({ error: 'Kullanici bulunamadi' });
+  res.json(rows[0]);
+});
+
+app.post('/api/users/login', async (req, res) => {
+  const pool = getPool();
+  const { username, password_hash } = req.body;
+  const { rows } = await pool.query(
+    'SELECT id, username, display_name, role, active FROM users WHERE username = $1 AND password_hash = $2',
+    [username, password_hash]
+  );
+  await pool.end();
+  if (rows.length === 0) return res.json({ error: 'Kullanici adi veya sifre hatali' });
+  if (!rows[0].active) return res.json({ error: 'Bu hesap devre disi birakilmis' });
+  res.json(rows[0]);
+});
+
+app.post('/api/users', async (req, res) => {
+  const pool = getPool();
+  const { username, password_hash, display_name, role } = req.body;
+  try {
+    const { rows } = await pool.query(
+      'INSERT INTO users (username, password_hash, display_name, role) VALUES ($1, $2, $3, $4) RETURNING id',
+      [username, password_hash, display_name, role || 'editor']
+    );
+    await pool.end();
+    res.status(201).json({ id: rows[0].id });
+  } catch (e) {
+    if (e.message.includes('unique') || e.message.includes('duplicate')) {
+      return res.status(400).json({ error: 'Bu kullanici adi zaten mevcut' });
+    }
+    throw e;
+  }
+});
+
+app.put('/api/users/:id', async (req, res) => {
+  const pool = getPool();
+  const { display_name, role, active, password_hash } = req.body;
+  if (password_hash) {
+    await pool.query(
+      'UPDATE users SET display_name=$1, role=$2, active=$3, password_hash=$4 WHERE id=$5',
+      [display_name, role, active !== undefined ? active : 1, password_hash, req.params.id]
+    );
+  } else {
+    await pool.query(
+      'UPDATE users SET display_name=$1, role=$2, active=$3 WHERE id=$4',
+      [display_name, role, active !== undefined ? active : 1, req.params.id]
+    );
+  }
+  await pool.end();
+  res.json({ success: true });
+});
+
+app.put('/api/users/:id/password', async (req, res) => {
+  const pool = getPool();
+  const { password_hash } = req.body;
+  await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, req.params.id]);
+  await pool.end();
+  res.json({ success: true });
+});
+
+app.delete('/api/users/:id', async (req, res) => {
+  const pool = getPool();
+  const admins = await pool.query("SELECT id FROM users WHERE role = 'admin' AND active = 1");
+  const user = await pool.query('SELECT role FROM users WHERE id = $1', [req.params.id]);
+  if (user.rows[0]?.role === 'admin' && admins.rows.length <= 1) {
+    await pool.end();
+    return res.status(400).json({ error: 'Son yonetici silinemez' });
+  }
+  await pool.query('UPDATE jobs SET assigned_to = NULL WHERE assigned_to = $1', [req.params.id]);
+  await pool.query('DELETE FROM users WHERE id = $1', [req.params.id]);
+  await pool.end();
+  res.json({ success: true });
 });
 
 export default app;

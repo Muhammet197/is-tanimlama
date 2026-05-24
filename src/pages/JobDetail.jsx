@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Edit, Trash2, ArrowLeft, ArrowRight, Clock, User, FolderOpen, FileText, FileDown, Printer, Play, Pause, RotateCcw, CheckCircle, MessageSquare, X } from 'lucide-react';
+import { Edit, Trash2, ArrowLeft, ArrowRight, Clock, User, FolderOpen, FileText, FileDown, Printer, Play, Pause, RotateCcw, CheckCircle, MessageSquare, X, UserCheck } from 'lucide-react';
 import { api } from '../api';
+import { useAuth } from '../context/AuthContext';
 import { generateJobMarkdown, generatePrintHTML, downloadFile } from '../utils/export';
 
 export default function JobDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser, can } = useAuth();
   const [job, setJob] = useState(null);
   const [lightboxImg, setLightboxImg] = useState(null);
+  const [assignedUser, setAssignedUser] = useState(null);
 
   // Work session state
   const [session, setSession] = useState(null);
@@ -17,7 +20,12 @@ export default function JobDetail() {
   const [pauseNote, setPauseNote] = useState('');
 
   useEffect(() => {
-    api.jobs.get(id).then(setJob).catch(() => navigate('/jobs'));
+    api.jobs.get(id).then(j => {
+      setJob(j);
+      if (j.assigned_to) {
+        api.users.get(j.assigned_to).then(setAssignedUser).catch(() => {});
+      }
+    }).catch(() => navigate('/jobs'));
     loadSession();
   }, [id]);
 
@@ -78,7 +86,7 @@ export default function JobDetail() {
   };
 
   const todayStr = () => new Date().toISOString().slice(0, 10);
-  const person = () => job?.responsible || 'Sistem';
+  const person = () => currentUser?.display_name || job?.responsible || 'Sistem';
 
   // ─── Work Session Actions ───
   const startSession = async () => {
@@ -194,10 +202,12 @@ export default function JobDetail() {
               <span className="badge badge-env">{job.status}</span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Link to={`/jobs/${id}/edit`} className="btn btn-secondary"><Edit size={14} /> Duzenle</Link>
-            <button onClick={handleDelete} className="btn btn-danger"><Trash2 size={14} /> Sil</button>
-          </div>
+          {can('edit') && (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Link to={`/jobs/${id}/edit`} className="btn btn-secondary"><Edit size={14} /> Duzenle</Link>
+              <button onClick={handleDelete} className="btn btn-danger"><Trash2 size={14} /> Sil</button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -281,6 +291,19 @@ export default function JobDetail() {
         <div className="info-item">
           <div className="info-label">Sorumlu</div>
           <div className="info-value">{job.responsible || '-'}</div>
+        </div>
+        <div className="info-item">
+          <div className="info-label"><UserCheck size={14} style={{ marginRight: 4 }} />Atanan Kisi</div>
+          <div className="info-value">
+            {assignedUser ? (
+              <span className="assigned-user-badge">
+                <span className="assigned-user-avatar">{assignedUser.display_name.charAt(0).toUpperCase()}</span>
+                {assignedUser.display_name}
+              </span>
+            ) : (
+              <span style={{ color: 'var(--text-light)' }}>Atanmamis</span>
+            )}
+          </div>
         </div>
         <div className="info-item">
           <div className="info-label">Periyot</div>

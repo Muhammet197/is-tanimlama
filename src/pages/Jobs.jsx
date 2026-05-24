@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, ClipboardList, Download, FileDown } from 'lucide-react';
+import { Plus, ClipboardList, Download, FileDown, UserCheck } from 'lucide-react';
 import JSZip from 'jszip';
 import { api } from '../api';
+import { useAuth } from '../context/AuthContext';
 import { generateJobMarkdown, generateAnaSayfa, generateGroupMarkdown, downloadFile } from '../utils/export';
 
 export default function Jobs() {
+  const { can } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [users, setUsers] = useState([]);
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
   const [difficultyFilter, setDifficultyFilter] = useState('');
+  const [assignedFilter, setAssignedFilter] = useState('');
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     api.groups.list().then(setGroups).catch(() => {});
+    api.users.list().then(u => setUsers(u.filter(x => x.active))).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -22,8 +27,15 @@ export default function Jobs() {
     if (search) params.search = search;
     if (groupFilter) params.group_id = groupFilter;
     if (difficultyFilter) params.difficulty = difficultyFilter;
-    api.jobs.list(params).then(setJobs).catch(() => {});
-  }, [search, groupFilter, difficultyFilter]);
+    api.jobs.list(params).then(data => {
+      // Client-side filter for assigned_to
+      if (assignedFilter) {
+        setJobs(data.filter(j => String(j.assigned_to) === String(assignedFilter)));
+      } else {
+        setJobs(data);
+      }
+    }).catch(() => {});
+  }, [search, groupFilter, difficultyFilter, assignedFilter]);
 
   const difficultyMap = { 'Kolay': 'badge-easy', 'Orta': 'badge-medium', 'Karmaşık': 'badge-hard' };
 
@@ -83,7 +95,9 @@ export default function Jobs() {
           >
             <Download size={16} /> {exporting ? 'Hazirlaniyor...' : 'Toplu Aktar (.zip)'}
           </button>
-          <Link to="/jobs/new" className="btn btn-primary"><Plus size={16} /> Yeni Is</Link>
+          {can('edit') && (
+            <Link to="/jobs/new" className="btn btn-primary"><Plus size={16} /> Yeni Is</Link>
+          )}
         </div>
       </div>
 
@@ -104,6 +118,10 @@ export default function Jobs() {
           <option value="Kolay">Kolay</option>
           <option value="Orta">Orta</option>
           <option value="Karmaşık">Karmasik</option>
+        </select>
+        <select className="filter-select" value={assignedFilter} onChange={e => setAssignedFilter(e.target.value)}>
+          <option value="">Tum Kisiler</option>
+          {users.map(u => <option key={u.id} value={u.id}>{u.display_name}</option>)}
         </select>
       </div>
 

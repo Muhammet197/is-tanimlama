@@ -2,16 +2,20 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Image } from 'lucide-react';
 import { api } from '../api';
+import { useAuth } from '../context/AuthContext';
 
 export default function JobForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const isEdit = !!id;
 
   const [groups, setGroups] = useState([]);
+  const [users, setUsers] = useState([]);
   const [form, setForm] = useState({
     title: '', responsible: '', group_id: '', period: '', estimated_duration: '',
-    difficulty: 'Orta', environments: [], prerequisites: [], notes: '', status: 'aktif'
+    difficulty: 'Orta', environments: [], prerequisites: [], notes: '', status: 'aktif',
+    assigned_to: ''
   });
   const [steps, setSteps] = useState([]);
   const [envInput, setEnvInput] = useState('');
@@ -24,13 +28,15 @@ export default function JobForm() {
 
   useEffect(() => {
     api.groups.list().then(setGroups).catch(() => {});
+    api.users.list().then(u => setUsers(u.filter(x => x.active))).catch(() => {});
     if (isEdit) {
       api.jobs.get(id).then(job => {
         const formData = {
           title: job.title, responsible: job.responsible || '', group_id: job.group_id || '',
           period: job.period || '', estimated_duration: job.estimated_duration || '',
           difficulty: job.difficulty || 'Orta', environments: job.environments || [],
-          prerequisites: job.prerequisites || [], notes: job.notes || '', status: job.status || 'aktif'
+          prerequisites: job.prerequisites || [], notes: job.notes || '', status: job.status || 'aktif',
+          assigned_to: job.assigned_to || ''
         };
         setForm(formData);
         setOriginalForm(formData);
@@ -131,7 +137,7 @@ export default function JobForm() {
     }
 
     try {
-      const data = { ...form, group_id: form.group_id || null, steps };
+      const data = { ...form, group_id: form.group_id || null, assigned_to: form.assigned_to || null, steps };
       if (isEdit) {
         await api.jobs.update(id, data);
         // Log what changed
@@ -139,7 +145,7 @@ export default function JobForm() {
         const today = new Date().toISOString().slice(0, 10);
         await api.jobs.addHistory(id, {
           date: today,
-          person: form.responsible || 'Sistem',
+          person: currentUser?.display_name || form.responsible || 'Sistem',
           note: `Is guncellendi: ${summary}`
         });
         navigate(`/jobs/${id}`);
@@ -178,6 +184,15 @@ export default function JobForm() {
               <label>Sorumlu</label>
               <input type="text" value={form.responsible} onChange={e => setField('responsible', e.target.value)} placeholder="Ornegin: Ahmet" />
             </div>
+            <div className="form-group">
+              <label>Atanan Kisi</label>
+              <select value={form.assigned_to} onChange={e => setField('assigned_to', e.target.value)}>
+                <option value="">Atanmamis</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.display_name} (@{u.username})</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="form-row">
             <div className="form-group">
               <label>Grup</label>
               <select value={form.group_id} onChange={e => setField('group_id', e.target.value)}>
