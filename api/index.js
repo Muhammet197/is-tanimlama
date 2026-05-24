@@ -493,7 +493,7 @@ app.delete('/api/sessions/:id', async (req, res) => {
 // ---------- LOGS (central activity log) ----------
 app.get('/api/logs', async (req, res) => {
   const pool = getPool();
-  const { job_id, person, search, limit: lim } = req.query;
+  const { job_id, person, search, date_from, date_to, limit: lim } = req.query;
   let sql = `
     SELECT h.*, j.title as job_title, g.name as group_name, g.color as group_color
     FROM history h
@@ -505,6 +505,8 @@ app.get('/api/logs', async (req, res) => {
   if (job_id) { params.push(Number(job_id)); sql += ` AND h.job_id = $${params.length}`; }
   if (person) { params.push(person); sql += ` AND h.person = $${params.length}`; }
   if (search) { params.push(`%${search}%`); sql += ` AND h.note LIKE $${params.length}`; }
+  if (date_from) { params.push(date_from); sql += ` AND h.date >= $${params.length}`; }
+  if (date_to) { params.push(date_to); sql += ` AND h.date <= $${params.length}`; }
   sql += ` ORDER BY h.id DESC`;
   params.push(Number(lim) || 200);
   sql += ` LIMIT $${params.length}`;

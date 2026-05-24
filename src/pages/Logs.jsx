@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Search, Filter, ArrowRight, Play, Pause, RotateCcw, CheckCircle, Edit, Plus, GitBranch, Trash2, X } from 'lucide-react';
+import { Activity, Search, Calendar, Play, Pause, RotateCcw, CheckCircle, Edit, Plus, GitBranch, Trash2, X } from 'lucide-react';
 import { api } from '../api';
 
 const iconMap = {
@@ -28,7 +28,7 @@ export default function Logs() {
   const [logs, setLogs] = useState([]);
   const [persons, setPersons] = useState([]);
   const [jobs, setJobs] = useState([]);
-  const [filters, setFilters] = useState({ person: '', job_id: '', search: '' });
+  const [filters, setFilters] = useState({ person: '', job_id: '', search: '', date_from: '', date_to: '' });
   const [searchInput, setSearchInput] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -40,7 +40,7 @@ export default function Logs() {
 
   useEffect(() => {
     loadLogs();
-  }, [filters.person, filters.job_id]);
+  }, [filters.person, filters.job_id, filters.date_from, filters.date_to]);
 
   const loadLogs = async () => {
     setLoading(true);
@@ -49,6 +49,8 @@ export default function Logs() {
       if (filters.person) params.person = filters.person;
       if (filters.job_id) params.job_id = filters.job_id;
       if (filters.search) params.search = filters.search;
+      if (filters.date_from) params.date_from = filters.date_from;
+      if (filters.date_to) params.date_to = filters.date_to;
       const data = await api.logs.list(params);
       setLogs(data);
     } catch (e) { console.error(e); }
@@ -62,11 +64,11 @@ export default function Logs() {
   };
 
   const clearFilters = () => {
-    setFilters({ person: '', job_id: '', search: '' });
+    setFilters({ person: '', job_id: '', search: '', date_from: '', date_to: '' });
     setSearchInput('');
   };
 
-  const hasFilters = filters.person || filters.job_id || filters.search;
+  const hasFilters = filters.person || filters.job_id || filters.search || filters.date_from || filters.date_to;
 
   // Group logs by date
   const grouped = {};
@@ -116,6 +118,25 @@ export default function Logs() {
             <option value="">Tum isler</option>
             {jobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
           </select>
+
+          <div className="log-date-range">
+            <Calendar size={14} />
+            <input
+              type="date"
+              className="form-input"
+              value={filters.date_from}
+              onChange={e => setFilters(f => ({ ...f, date_from: e.target.value }))}
+              title="Baslangic tarihi"
+            />
+            <span>—</span>
+            <input
+              type="date"
+              className="form-input"
+              value={filters.date_to}
+              onChange={e => setFilters(f => ({ ...f, date_to: e.target.value }))}
+              title="Bitis tarihi"
+            />
+          </div>
 
           {hasFilters && (
             <button className="btn btn-secondary btn-sm" onClick={clearFilters}>

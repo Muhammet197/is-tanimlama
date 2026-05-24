@@ -390,7 +390,7 @@ export const api = {
   logs: {
     list: async (params = {}) => {
       const db = await getDb();
-      const { job_id, person, search, limit: lim } = params;
+      const { job_id, person, search, date_from, date_to, limit: lim } = params;
       let sql = `
         SELECT h.*, j.title as job_title, g.name as group_name, g.color as group_color
         FROM history h
@@ -411,6 +411,14 @@ export const api = {
       if (search) {
         sql += ` AND h.note LIKE $${bindings.length + 1}`;
         bindings.push(`%${search}%`);
+      }
+      if (date_from) {
+        sql += ` AND h.date >= $${bindings.length + 1}`;
+        bindings.push(date_from);
+      }
+      if (date_to) {
+        sql += ` AND h.date <= $${bindings.length + 1}`;
+        bindings.push(date_to);
       }
 
       sql += ` ORDER BY h.id DESC`;

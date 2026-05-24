@@ -904,6 +904,16 @@ body {
   border: 1px solid var(--border); border-radius: var(--radius);
   background: var(--bg-input); color: var(--text); font-size: 14px;
 }
+.log-date-range {
+  display: flex; align-items: center; gap: 6px;
+}
+.log-date-range input[type="date"] {
+  padding: 7px 10px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg-input); color: var(--text); font-size: 13px;
+  min-width: 130px;
+}
+.log-date-range span { color: var(--text-light); font-size: 14px; }
+
 .log-stats {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 0; font-size: 13px; color: var(--text-light);
