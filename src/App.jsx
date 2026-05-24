@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ClipboardList, FolderOpen, GitBranch, Plus, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, FolderOpen, GitBranch, Plus, Moon, Sun, Monitor, Globe, Download, Activity } from 'lucide-react';
+import { isDesktopMode } from './api';
 import Home from './pages/Home';
 import Jobs from './pages/Jobs';
 import JobDetail from './pages/JobDetail';
 import JobForm from './pages/JobForm';
 import Groups from './pages/Groups';
 import GraphView from './pages/GraphView';
+import DataImport from './pages/DataImport';
+import Logs from './pages/Logs';
 
 export default function App() {
   const location = useLocation();
@@ -40,6 +43,9 @@ export default function App() {
           <NavLink to="/graph" className={({ isActive }) => isActive ? 'active' : ''}>
             <GitBranch size={18} /> Bagimlilik Haritasi
           </NavLink>
+          <NavLink to="/logs" className={({ isActive }) => isActive ? 'active' : ''}>
+            <Activity size={18} /> Aktivite Logu
+          </NavLink>
         </nav>
 
         <div className="sidebar-section">Hizli Islem</div>
@@ -47,9 +53,19 @@ export default function App() {
           <NavLink to="/jobs/new" className={({ isActive }) => isActive ? 'active' : ''}>
             <Plus size={18} /> Yeni Is Ekle
           </NavLink>
+          {isDesktopMode && (
+            <NavLink to="/import" className={({ isActive }) => isActive ? 'active' : ''}>
+              <Download size={18} /> Web'den Aktar
+            </NavLink>
+          )}
         </nav>
 
         <div style={{ flex: 1 }} />
+
+        <div className="sidebar-mode-badge" title={isDesktopMode ? 'Yerel SQLite veritabanı kullanılıyor' : 'Bulut veritabanı kullanılıyor'}>
+          {isDesktopMode ? <Monitor size={14} /> : <Globe size={14} />}
+          {isDesktopMode ? 'Masaüstü Modu' : 'Web Modu'}
+        </div>
 
         <button className="theme-toggle" onClick={() => setDark(!dark)}>
           {dark ? <Sun size={18} /> : <Moon size={18} />}
@@ -66,6 +82,8 @@ export default function App() {
           <Route path="/jobs/:id/edit" element={<JobForm />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/graph" element={<GraphView />} />
+          <Route path="/logs" element={<Logs />} />
+          <Route path="/import" element={<DataImport />} />
         </Routes>
       </main>
     </div>

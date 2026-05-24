@@ -2,6 +2,16 @@ import { Pool } from '@neondatabase/serverless';
 import express from 'express';
 
 const app = express();
+
+// CORS — masaüstü uygulamasından veri aktarımı için
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  next();
+});
+
 app.use(express.json());
 
 function getPool() {
@@ -80,6 +90,19 @@ app.post('/api/init', async (req, res) => {
       date TEXT NOT NULL,
       person TEXT NOT NULL,
       note TEXT
+    )
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS work_sessions (
+      id SERIAL PRIMARY KEY,
+      job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+      status TEXT DEFAULT 'active',
+      current_step INTEGER DEFAULT 0,
+      completed_steps TEXT DEFAULT '[]',
+      pause_note TEXT,
+      started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      paused_at TIMESTAMP,
+      completed_at TIMESTAMP
     )
   `);
   res.json({ success: true, message: 'Tablolar oluşturuldu' });
@@ -412,6 +435,90 @@ app.get('/api/graph', async (req, res) => {
   }));
 
   res.json({ nodes, edges, groups, responsibles });
+});
+
+// ---------- WORK SESSIONS ----------
+app.get('/api/sessions', async (req, res) => {
+  const pool = getPool();
+  const { rows } = await pool.query(`
+    SELECT ws.*, j.title as job_title, j.responsible, g.name as group_name, g.color as group_color,
+      (SELECT COUNT(*) FROM steps WHERE job_id = ws.job_id) as total_steps
+    FROM work_sessions ws
+    JOIN jobs j ON ws.job_id = j.id
+    LEFT JOIN groups_ g ON j.group_id = g.id
+    WHERE ws.status IN ('active', 'paused')
+    ORDER BY ws.started_at DESC
+  `);
+  rows.forEach(r => r.completed_steps = JSON.parse(r.completed_steps || '[]'));
+  res.json(rows);
+});
+
+app.post('/api/sessions', async (req, res) => {
+  const pool = getPool();
+  const { job_id } = req.body;
+  // Check if there's already an active/paused session for this job
+  const { rows: existing } = await pool.query(
+    "SELECT id FROM work_sessions WHERE job_id = $1 AND status IN ('active', 'paused')", [job_id]);
+  if (existing.length > 0) return res.status(400).json({ error: 'Bu iş için zaten aktif bir oturum var' });
+  const { rows } = await pool.query(
+    'INSERT INTO work_sessions (job_id) VALUES ($1) RETURNING id', [job_id]);
+  res.status(201).json({ id: rows[0].id });
+});
+
+app.put('/api/sessions/:id', async (req, res) => {
+  const pool = getPool();
+  const { status, current_step, completed_steps, pause_note } = req.body;
+  let paused_at = null, completed_at = null;
+  if (status === 'paused') paused_at = new Date().toISOString();
+  if (status === 'completed') completed_at = new Date().toISOString();
+  await pool.query(`
+    UPDATE work_sessions SET status=$1, current_step=$2, completed_steps=$3, pause_note=$4, paused_at=$5, completed_at=$6
+    WHERE id=$7
+  `, [status, current_step, JSON.stringify(completed_steps || []), pause_note, paused_at, completed_at, req.params.id]);
+  res.json({ success: true });
+});
+
+app.put('/api/sessions/:id/resume', async (req, res) => {
+  const pool = getPool();
+  await pool.query("UPDATE work_sessions SET status='active', paused_at=NULL WHERE id=$1", [req.params.id]);
+  res.json({ success: true });
+});
+
+app.delete('/api/sessions/:id', async (req, res) => {
+  const pool = getPool();
+  await pool.query('DELETE FROM work_sessions WHERE id = $1', [req.params.id]);
+  res.json({ success: true });
+});
+
+// ---------- LOGS (central activity log) ----------
+app.get('/api/logs', async (req, res) => {
+  const pool = getPool();
+  const { job_id, person, search, limit: lim } = req.query;
+  let sql = `
+    SELECT h.*, j.title as job_title, g.name as group_name, g.color as group_color
+    FROM history h
+    JOIN jobs j ON h.job_id = j.id
+    LEFT JOIN groups_ g ON j.group_id = g.id
+    WHERE 1=1
+  `;
+  const params = [];
+  if (job_id) { params.push(Number(job_id)); sql += ` AND h.job_id = $${params.length}`; }
+  if (person) { params.push(person); sql += ` AND h.person = $${params.length}`; }
+  if (search) { params.push(`%${search}%`); sql += ` AND h.note LIKE $${params.length}`; }
+  sql += ` ORDER BY h.id DESC`;
+  params.push(Number(lim) || 200);
+  sql += ` LIMIT $${params.length}`;
+
+  const { rows } = await pool.query(sql, params);
+  await pool.end();
+  res.json(rows);
+});
+
+app.get('/api/logs/persons', async (req, res) => {
+  const pool = getPool();
+  const { rows } = await pool.query('SELECT DISTINCT person FROM history ORDER BY person');
+  await pool.end();
+  res.json(rows);
 });
 
 export default app;

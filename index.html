@@ -19,8 +19,17 @@
   <div id="root"></div>
   <script type="module" src="/src/main.jsx"></script>
   <script>
-    // Register Service Worker
-    if ('serviceWorker' in navigator) {
+    // Catch any unhandled errors and show them
+    window.onerror = function(msg, src, line, col, err) {
+      document.getElementById('root').innerHTML =
+        '<pre style="color:red;padding:20px;">HATA: ' + msg + '\nDosya: ' + src + '\nSatir: ' + line + '</pre>';
+    };
+    window.addEventListener('unhandledrejection', function(e) {
+      document.getElementById('root').innerHTML =
+        '<pre style="color:red;padding:20px;">PROMISE HATA: ' + (e.reason?.message || e.reason) + '</pre>';
+    });
+    // Register Service Worker (only in browser, not in Tauri)
+    if ('serviceWorker' in navigator && !window.__TAURI_INTERNALS__) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch(() => {});
       });

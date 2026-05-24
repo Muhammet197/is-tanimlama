@@ -18,16 +18,23 @@ export default function JobForm() {
   const [preqInput, setPreqInput] = useState('');
   const [error, setError] = useState('');
 
+  // Store original data for change detection
+  const [originalForm, setOriginalForm] = useState(null);
+  const [originalStepCount, setOriginalStepCount] = useState(0);
+
   useEffect(() => {
     api.groups.list().then(setGroups).catch(() => {});
     if (isEdit) {
       api.jobs.get(id).then(job => {
-        setForm({
+        const formData = {
           title: job.title, responsible: job.responsible || '', group_id: job.group_id || '',
           period: job.period || '', estimated_duration: job.estimated_duration || '',
           difficulty: job.difficulty || 'Orta', environments: job.environments || [],
           prerequisites: job.prerequisites || [], notes: job.notes || '', status: job.status || 'aktif'
-        });
+        };
+        setForm(formData);
+        setOriginalForm(formData);
+        setOriginalStepCount((job.steps || []).length);
         setSteps((job.steps || []).map(s => ({
           title: s.title || '', environment: s.environment || '', description: s.description || '',
           tip: s.tip || '', warning: s.warning || '', screenshot_url: s.screenshot_url || ''
@@ -79,6 +86,41 @@ export default function JobForm() {
     reader.readAsDataURL(file);
   };
 
+  // Build a human-readable change summary
+  const buildChangeSummary = () => {
+    if (!originalForm) return '';
+    const changes = [];
+    const labels = {
+      title: 'Baslik', responsible: 'Sorumlu', difficulty: 'Zorluk',
+      period: 'Periyot', estimated_duration: 'Tahmini sure', status: 'Durum', notes: 'Notlar'
+    };
+
+    for (const key of Object.keys(labels)) {
+      if (form[key] !== originalForm[key]) {
+        if (originalForm[key] && form[key]) {
+          changes.push(`${labels[key]}: ${originalForm[key]} → ${form[key]}`);
+        } else if (form[key]) {
+          changes.push(`${labels[key]} eklendi`);
+        } else {
+          changes.push(`${labels[key]} kaldirildi`);
+        }
+      }
+    }
+
+    // Group change
+    if (String(form.group_id || '') !== String(originalForm.group_id || '')) {
+      changes.push('Grup degistirildi');
+    }
+
+    // Step count change
+    if (steps.length !== originalStepCount) {
+      const diff = steps.length - originalStepCount;
+      changes.push(diff > 0 ? `${diff} yeni adim eklendi` : `${Math.abs(diff)} adim cikarildi`);
+    }
+
+    return changes.length > 0 ? changes.join(', ') : 'Kucuk duzenlemeler';
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -92,6 +134,14 @@ export default function JobForm() {
       const data = { ...form, group_id: form.group_id || null, steps };
       if (isEdit) {
         await api.jobs.update(id, data);
+        // Log what changed
+        const summary = buildChangeSummary();
+        const today = new Date().toISOString().slice(0, 10);
+        await api.jobs.addHistory(id, {
+          date: today,
+          person: form.responsible || 'Sistem',
+          note: `Is guncellendi: ${summary}`
+        });
         navigate(`/jobs/${id}`);
       } else {
         const result = await api.jobs.create(data);

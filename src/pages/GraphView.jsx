@@ -182,6 +182,23 @@ export default function GraphView() {
         type: newDep.type,
         description: newDep.description
       });
+
+      // Log dependency on both jobs
+      const fromNode = allNodes.find(n => n.id === newDep.from);
+      const toNode = allNodes.find(n => n.id === newDep.to);
+      const today = new Date().toISOString().slice(0, 10);
+      const fromTitle = fromNode?.data?.label || newDep.from;
+      const toTitle = toNode?.data?.label || newDep.to;
+
+      await api.jobs.addHistory(newDep.from, {
+        date: today, person: 'Sistem',
+        note: `Bagimlilik eklendi: → ${toTitle} (${newDep.type})`
+      }).catch(() => {});
+      await api.jobs.addHistory(newDep.to, {
+        date: today, person: 'Sistem',
+        note: `Bagimlilik eklendi: ${fromTitle} → (${newDep.type})`
+      }).catch(() => {});
+
       setShowAddDep(false);
       setNewDep({ from: '', to: '', type: 'Sıralı', description: '' });
       load();
@@ -194,7 +211,27 @@ export default function GraphView() {
     if (!selectedEdge) return;
     const depId = selectedEdge.depId || selectedEdge.id.replace('e', '');
     try {
+      // Log before deleting
+      const today = new Date().toISOString().slice(0, 10);
+      const sourceNode = allNodes.find(n => n.id === selectedEdge.source);
+      const targetNode = allNodes.find(n => n.id === selectedEdge.target);
+      const edgeType = selectedEdge.data?.type || selectedEdge.label || '';
+
       await api.dependencies.delete(depId);
+
+      if (sourceNode) {
+        await api.jobs.addHistory(selectedEdge.source, {
+          date: today, person: 'Sistem',
+          note: `Bagimlilik kaldirildi: → ${targetNode?.data?.label || ''} (${edgeType})`
+        }).catch(() => {});
+      }
+      if (targetNode) {
+        await api.jobs.addHistory(selectedEdge.target, {
+          date: today, person: 'Sistem',
+          note: `Bagimlilik kaldirildi: ${sourceNode?.data?.label || ''} → (${edgeType})`
+        }).catch(() => {});
+      }
+
       setSelectedEdge(null);
       load();
     } catch (e) {
