@@ -4,7 +4,7 @@ import { Plus, ClipboardList, Download, FileDown, UserCheck } from 'lucide-react
 import JSZip from 'jszip';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { generateJobMarkdown, generateAnaSayfa, generateGroupMarkdown, downloadFile } from '../utils/export';
+import { generateJobMarkdown, generateAnaSayfa, generateGroupMarkdown, generateJobsCsv, downloadFile } from '../utils/export';
 
 export default function Jobs() {
   const { can } = useAuth();
@@ -87,6 +87,14 @@ export default function Jobs() {
       <div className="page-header">
         <h1>Isler</h1>
         <div className="export-actions">
+          <button
+            onClick={() => { const csv = generateJobsCsv(jobs); downloadFile(csv, 'isler.csv', 'text/csv;charset=utf-8'); }}
+            className="btn btn-secondary"
+            disabled={jobs.length === 0}
+            title="Is listesini CSV olarak indir"
+          >
+            <Download size={16} /> CSV
+          </button>
           <button
             onClick={handleBulkExport}
             className="btn btn-secondary"

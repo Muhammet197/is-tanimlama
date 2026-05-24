@@ -68,6 +68,15 @@ const webApi = {
     },
     persons: () => request('/logs/persons'),
   },
+  comments: {
+    list: (jobId) => request(`/jobs/${jobId}/comments`),
+    create: (jobId, data) => request(`/jobs/${jobId}/comments`, { method: 'POST', body: data }),
+    delete: (id) => request(`/comments/${id}`, { method: 'DELETE' }),
+  },
+  backup: {
+    export: () => request('/backup/export'),
+    import: (data) => request('/backup/import', { method: 'POST', body: data }),
+  },
   users: {
     list: () => request('/users'),
     get: (id) => request(`/users/${id}`),

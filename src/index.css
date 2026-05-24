@@ -1534,4 +1534,199 @@ body {
   font-weight: 700;
 }
 
+/* ─── COMMENTS ─── */
+.comment-form {
+  margin-bottom: 16px;
+}
+
+.comment-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.comment-input-row .form-input {
+  flex: 1;
+}
+
+.comment-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.comment-list {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+
+.comment-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.comment-item:last-child {
+  border-bottom: none;
+}
+
+.comment-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.comment-header strong {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.comment-date {
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+.comment-delete {
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: #ef4444;
+  margin-left: auto;
+}
+
+.comment-item:hover .comment-delete {
+  opacity: 1;
+}
+
+.comment-text {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* ─── DRAG & DROP STEPS ─── */
+.step-drag-handle {
+  cursor: grab;
+  color: var(--text-light);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  opacity: 0.4;
+  transition: opacity 0.2s;
+}
+
+.step-form-item:hover .step-drag-handle {
+  opacity: 1;
+}
+
+.step-form-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.step-form-header strong {
+  flex: 1;
+}
+
+.step-dragging {
+  opacity: 0.4;
+  border-style: dashed !important;
+}
+
+.step-drag-over {
+  border-top: 3px solid var(--primary) !important;
+}
+
+/* ─── KEYBOARD SHORTCUTS ─── */
+.shortcut-hint {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  z-index: 100;
+  transition: all 0.2s;
+}
+
+.shortcut-hint:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: scale(1.1);
+}
+
+.shortcut-modal {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 24px 28px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.shortcut-modal h3 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.shortcut-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shortcut-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+}
+
+.shortcut-item:last-child {
+  border-bottom: none;
+}
+
+.shortcut-key {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: 'SF Mono', 'Consolas', monospace;
+  font-weight: 600;
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
 /* (dark mode overrides consolidated in main dark section above) */

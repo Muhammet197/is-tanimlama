@@ -13,6 +13,7 @@ import DataImport from './pages/DataImport';
 import Logs from './pages/Logs';
 import Login from './pages/Login';
 import Users from './pages/Users';
+import { useKeyboardShortcuts, ShortcutHelpModal } from './components/KeyboardShortcuts';
 
 const roleLabels = { admin: 'Yonetici', editor: 'Duzenleyici', viewer: 'Goruntuleyen' };
 
@@ -20,6 +21,7 @@ export default function App() {
   const location = useLocation();
   const { user, logout, can, loading } = useAuth();
   const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark');
+  const { showHelp, setShowHelp, shortcuts } = useKeyboardShortcuts();
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
@@ -139,6 +141,14 @@ export default function App() {
           <Route path="/users" element={can('manage_users') ? <Users /> : <Home />} />
         </Routes>
       </main>
+
+      {/* Keyboard shortcuts help */}
+      <ShortcutHelpModal showHelp={showHelp} setShowHelp={setShowHelp} shortcuts={shortcuts} />
+
+      {/* Shortcut hint badge */}
+      <div className="shortcut-hint" onClick={() => setShowHelp(true)} title="Klavye kisayollari (Ctrl+K)">
+        ?
+      </div>
     </div>
   );
 }

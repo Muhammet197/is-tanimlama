@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Image } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Image, GripVertical } from 'lucide-react';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
 
@@ -72,6 +72,40 @@ export default function JobForm() {
 
   const removeStep = (index) => {
     setSteps(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Drag & Drop for steps
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  const handleDragStart = (index) => {
+    setDragIndex(index);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDrop = (index) => {
+    if (dragIndex === null || dragIndex === index) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    setSteps(prev => {
+      const updated = [...prev];
+      const [moved] = updated.splice(dragIndex, 1);
+      updated.splice(index, 0, moved);
+      return updated;
+    });
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDragOverIndex(null);
   };
 
   const handleFileUpload = (index, e) => {
@@ -268,8 +302,19 @@ export default function JobForm() {
           </div>
 
           {steps.map((step, i) => (
-            <div key={i} className="step-form-item">
+            <div
+              key={i}
+              className={`step-form-item ${dragIndex === i ? 'step-dragging' : ''} ${dragOverIndex === i ? 'step-drag-over' : ''}`}
+              draggable
+              onDragStart={() => handleDragStart(i)}
+              onDragOver={(e) => handleDragOver(e, i)}
+              onDrop={() => handleDrop(i)}
+              onDragEnd={handleDragEnd}
+            >
               <div className="step-form-header">
+                <div className="step-drag-handle" title="Surukle birak ile siralama">
+                  <GripVertical size={16} />
+                </div>
                 <strong>Adim {i + 1}</strong>
                 <button type="button" className="btn-icon" onClick={() => removeStep(i)}><Trash2 size={16} /></button>
               </div>

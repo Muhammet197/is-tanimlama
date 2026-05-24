@@ -119,6 +119,17 @@ app.post('/api/init', async (req, res) => {
   `);
   // Add assigned_to column to jobs
   await pool.query(`ALTER TABLE jobs ADD COLUMN IF NOT EXISTS assigned_to INTEGER REFERENCES users(id)`).catch(() => {});
+  // Comments table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS comments (
+      id SERIAL PRIMARY KEY,
+      job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+      user_name TEXT NOT NULL,
+      text TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
   // Default admin user
   const admins = await pool.query("SELECT id FROM users WHERE username = 'admin'");
   if (admins.rows.length === 0) {
@@ -246,6 +257,7 @@ app.get('/api/jobs/:id', async (req, res) => {
     `SELECT d.*, j.title as from_job_title FROM dependencies d JOIN jobs j ON d.from_job_id = j.id WHERE d.to_job_id = $1`, [job.id]
   )).rows;
   job.history = (await pool.query('SELECT * FROM history WHERE job_id = $1 ORDER BY date DESC', [job.id])).rows;
+  job.comments = (await pool.query('SELECT * FROM comments WHERE job_id = $1 ORDER BY created_at DESC', [job.id])).rows;
   res.json(job);
 });
 
@@ -544,6 +556,105 @@ app.get('/api/logs/persons', async (req, res) => {
   const { rows } = await pool.query('SELECT DISTINCT person FROM history ORDER BY person');
   await pool.end();
   res.json(rows);
+});
+
+// ---------- COMMENTS ----------
+app.get('/api/jobs/:id/comments', async (req, res) => {
+  const pool = getPool();
+  const { rows } = await pool.query('SELECT * FROM comments WHERE job_id = $1 ORDER BY created_at DESC', [req.params.id]);
+  await pool.end();
+  res.json(rows);
+});
+
+app.post('/api/jobs/:id/comments', async (req, res) => {
+  const pool = getPool();
+  const { user_id, user_name, text } = req.body;
+  const { rows } = await pool.query(
+    'INSERT INTO comments (job_id, user_id, user_name, text) VALUES ($1,$2,$3,$4) RETURNING *',
+    [req.params.id, user_id || null, user_name, text]
+  );
+  await pool.end();
+  res.status(201).json(rows[0]);
+});
+
+app.delete('/api/comments/:id', async (req, res) => {
+  const pool = getPool();
+  await pool.query('DELETE FROM comments WHERE id = $1', [req.params.id]);
+  await pool.end();
+  res.json({ success: true });
+});
+
+// ---------- BACKUP ----------
+app.get('/api/backup/export', async (req, res) => {
+  const pool = getPool();
+  const groups = (await pool.query('SELECT * FROM groups_ ORDER BY id')).rows;
+  const jobs = (await pool.query('SELECT * FROM jobs ORDER BY id')).rows;
+  const steps = (await pool.query('SELECT * FROM steps ORDER BY job_id, order_num')).rows;
+  const dependencies = (await pool.query('SELECT * FROM dependencies ORDER BY id')).rows;
+  const history = (await pool.query('SELECT * FROM history ORDER BY id')).rows;
+  const users = (await pool.query('SELECT id, username, password_hash, display_name, role, active, created_at FROM users ORDER BY id')).rows;
+  const comments = (await pool.query('SELECT * FROM comments ORDER BY id')).rows;
+  const sessions = (await pool.query('SELECT * FROM work_sessions ORDER BY id')).rows;
+  await pool.end();
+  res.json({
+    _format: 'is-tanimlama-full-backup',
+    _version: '2.0',
+    _date: new Date().toISOString(),
+    groups, jobs, steps, dependencies, history, users, comments, sessions
+  });
+});
+
+app.post('/api/backup/import', async (req, res) => {
+  const pool = getPool();
+  const data = req.body;
+  try {
+    await pool.query('DELETE FROM comments');
+    await pool.query('DELETE FROM work_sessions');
+    await pool.query('DELETE FROM history');
+    await pool.query('DELETE FROM dependencies');
+    await pool.query('DELETE FROM steps');
+    await pool.query('DELETE FROM jobs');
+    await pool.query('DELETE FROM groups_');
+    await pool.query('DELETE FROM users');
+
+    for (const g of (data.groups || [])) {
+      await pool.query('INSERT INTO groups_ (id, name, description, color, created_at) VALUES ($1,$2,$3,$4,$5)',
+        [g.id, g.name, g.description, g.color, g.created_at]);
+    }
+    for (const j of (data.jobs || [])) {
+      await pool.query('INSERT INTO jobs (id, title, responsible, group_id, period, estimated_duration, difficulty, environments, prerequisites, notes, status, assigned_to, created_at, updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)',
+        [j.id, j.title, j.responsible, j.group_id, j.period, j.estimated_duration, j.difficulty, j.environments, j.prerequisites, j.notes, j.status, j.assigned_to, j.created_at, j.updated_at]);
+    }
+    for (const s of (data.steps || [])) {
+      await pool.query('INSERT INTO steps (id, job_id, order_num, title, environment, description, tip, warning, screenshot_url) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+        [s.id, s.job_id, s.order_num, s.title, s.environment, s.description, s.tip, s.warning, s.screenshot_url]);
+    }
+    for (const d of (data.dependencies || [])) {
+      await pool.query('INSERT INTO dependencies (id, from_job_id, to_job_id, type, description) VALUES ($1,$2,$3,$4,$5)',
+        [d.id, d.from_job_id, d.to_job_id, d.type, d.description]);
+    }
+    for (const h of (data.history || [])) {
+      await pool.query('INSERT INTO history (id, job_id, date, person, note) VALUES ($1,$2,$3,$4,$5)',
+        [h.id, h.job_id, h.date, h.person, h.note]);
+    }
+    for (const u of (data.users || [])) {
+      await pool.query('INSERT INTO users (id, username, password_hash, display_name, role, active, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+        [u.id, u.username, u.password_hash, u.display_name, u.role, u.active, u.created_at]);
+    }
+    for (const c of (data.comments || [])) {
+      await pool.query('INSERT INTO comments (id, job_id, user_id, user_name, text, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
+        [c.id, c.job_id, c.user_id, c.user_name, c.text, c.created_at]);
+    }
+    for (const ws of (data.sessions || [])) {
+      await pool.query('INSERT INTO work_sessions (id, job_id, status, current_step, completed_steps, pause_note, started_at, paused_at, completed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+        [ws.id, ws.job_id, ws.status, ws.current_step, ws.completed_steps, ws.pause_note, ws.started_at, ws.paused_at, ws.completed_at]);
+    }
+    await pool.end();
+    res.json({ success: true });
+  } catch (e) {
+    await pool.end();
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ---------- USERS ----------

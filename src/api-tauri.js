@@ -22,6 +22,17 @@ async function getDb() {
     `);
     // Add assigned_to column to jobs if not exists
     try { await _db.execute('ALTER TABLE jobs ADD COLUMN assigned_to INTEGER REFERENCES users(id)'); } catch {}
+    // Comments table
+    await _db.execute(`
+      CREATE TABLE IF NOT EXISTS comments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+        user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+        user_name TEXT NOT NULL,
+        text TEXT NOT NULL,
+        created_at TEXT DEFAULT (datetime('now','localtime'))
+      )
+    `);
     // Ensure default admin exists
     const admins = await _db.select("SELECT id FROM users WHERE username = 'admin'");
     if (admins.length === 0) {
@@ -109,6 +120,7 @@ export const api = {
         WHERE d.to_job_id = $1
       `, [Number(id)]);
       job.history = await db.select('SELECT * FROM history WHERE job_id = $1 ORDER BY date DESC', [Number(id)]);
+      job.comments = await db.select('SELECT * FROM comments WHERE job_id = $1 ORDER BY created_at DESC', [Number(id)]);
 
       return job;
     },
@@ -542,6 +554,94 @@ export const api = {
     changePassword: async (id, password_hash) => {
       const db = await getDb();
       await db.execute('UPDATE users SET password_hash = $1 WHERE id = $2', [password_hash, Number(id)]);
+      return { success: true };
+    },
+  },
+
+  comments: {
+    list: async (jobId) => {
+      const db = await getDb();
+      return db.select('SELECT * FROM comments WHERE job_id = $1 ORDER BY created_at DESC', [Number(jobId)]);
+    },
+    create: async (jobId, data) => {
+      const db = await getDb();
+      const { user_id, user_name, text } = data;
+      const result = await db.execute(
+        "INSERT INTO comments (job_id, user_id, user_name, text) VALUES ($1, $2, $3, $4)",
+        [Number(jobId), user_id || null, user_name, text]
+      );
+      return { id: result.lastInsertId };
+    },
+    delete: async (id) => {
+      const db = await getDb();
+      await db.execute('DELETE FROM comments WHERE id = $1', [Number(id)]);
+      return { success: true };
+    },
+  },
+
+  backup: {
+    export: async () => {
+      const db = await getDb();
+      const groups = await db.select('SELECT * FROM groups_ ORDER BY id');
+      const jobs = await db.select('SELECT * FROM jobs ORDER BY id');
+      const steps = await db.select('SELECT * FROM steps ORDER BY job_id, order_num');
+      const dependencies = await db.select('SELECT * FROM dependencies ORDER BY id');
+      const history = await db.select('SELECT * FROM history ORDER BY id');
+      const users = await db.select('SELECT id, username, password_hash, display_name, role, active, created_at FROM users ORDER BY id');
+      const comments = await db.select('SELECT * FROM comments ORDER BY id');
+      const sessions = await db.select('SELECT * FROM work_sessions ORDER BY id');
+      return {
+        _format: 'is-tanimlama-full-backup',
+        _version: '2.0',
+        _date: new Date().toISOString(),
+        groups, jobs, steps, dependencies, history, users, comments, sessions
+      };
+    },
+    import: async (data) => {
+      const db = await getDb();
+      // Clear all tables in correct order
+      await db.execute('DELETE FROM comments');
+      await db.execute('DELETE FROM work_sessions');
+      await db.execute('DELETE FROM history');
+      await db.execute('DELETE FROM dependencies');
+      await db.execute('DELETE FROM steps');
+      await db.execute('DELETE FROM jobs');
+      await db.execute('DELETE FROM groups_');
+      await db.execute('DELETE FROM users');
+
+      // Re-insert with original IDs
+      for (const g of (data.groups || [])) {
+        await db.execute('INSERT INTO groups_ (id, name, description, color, created_at) VALUES ($1,$2,$3,$4,$5)',
+          [g.id, g.name, g.description, g.color, g.created_at]);
+      }
+      for (const j of (data.jobs || [])) {
+        await db.execute('INSERT INTO jobs (id, title, responsible, group_id, period, estimated_duration, difficulty, environments, prerequisites, notes, status, assigned_to, created_at, updated_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)',
+          [j.id, j.title, j.responsible, j.group_id, j.period, j.estimated_duration, j.difficulty, j.environments, j.prerequisites, j.notes, j.status, j.assigned_to, j.created_at, j.updated_at]);
+      }
+      for (const s of (data.steps || [])) {
+        await db.execute('INSERT INTO steps (id, job_id, order_num, title, environment, description, tip, warning, screenshot_url) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+          [s.id, s.job_id, s.order_num, s.title, s.environment, s.description, s.tip, s.warning, s.screenshot_url]);
+      }
+      for (const d of (data.dependencies || [])) {
+        await db.execute('INSERT INTO dependencies (id, from_job_id, to_job_id, type, description) VALUES ($1,$2,$3,$4,$5)',
+          [d.id, d.from_job_id, d.to_job_id, d.type, d.description]);
+      }
+      for (const h of (data.history || [])) {
+        await db.execute('INSERT INTO history (id, job_id, date, person, note) VALUES ($1,$2,$3,$4,$5)',
+          [h.id, h.job_id, h.date, h.person, h.note]);
+      }
+      for (const u of (data.users || [])) {
+        await db.execute('INSERT INTO users (id, username, password_hash, display_name, role, active, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+          [u.id, u.username, u.password_hash, u.display_name, u.role, u.active, u.created_at]);
+      }
+      for (const c of (data.comments || [])) {
+        await db.execute('INSERT INTO comments (id, job_id, user_id, user_name, text, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
+          [c.id, c.job_id, c.user_id, c.user_name, c.text, c.created_at]);
+      }
+      for (const ws of (data.sessions || [])) {
+        await db.execute('INSERT INTO work_sessions (id, job_id, status, current_step, completed_steps, pause_note, started_at, paused_at, completed_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)',
+          [ws.id, ws.job_id, ws.status, ws.current_step, ws.completed_steps, ws.pause_note, ws.started_at, ws.paused_at, ws.completed_at]);
+      }
       return { success: true };
     },
   },

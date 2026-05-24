@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Activity, Search, Calendar, Play, Pause, RotateCcw, CheckCircle, Edit, Plus, GitBranch, Trash2, X } from 'lucide-react';
+import { Activity, Search, Calendar, Play, Pause, RotateCcw, CheckCircle, Edit, Plus, GitBranch, Trash2, X, Download } from 'lucide-react';
 import { api } from '../api';
+import { generateLogsCsv, downloadFile } from '../utils/export';
 
 const iconMap = {
   'baslatildi': <Play size={14} color="#10b981" />,
@@ -82,6 +83,13 @@ export default function Logs() {
     <div>
       <div className="page-header">
         <h1><Activity size={24} /> Aktivite Logu</h1>
+        <button
+          className="btn btn-secondary"
+          disabled={logs.length === 0}
+          onClick={() => { const csv = generateLogsCsv(logs); downloadFile(csv, 'loglar.csv', 'text/csv;charset=utf-8'); }}
+        >
+          <Download size={16} /> CSV
+        </button>
       </div>
 
       {/* Filters */}

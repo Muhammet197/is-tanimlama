@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Edit, Trash2, ArrowLeft, ArrowRight, Clock, User, FolderOpen, FileText, FileDown, Printer, Play, Pause, RotateCcw, CheckCircle, MessageSquare, X, UserCheck } from 'lucide-react';
+import { Edit, Trash2, ArrowLeft, ArrowRight, Clock, User, FolderOpen, FileText, FileDown, Printer, Play, Pause, RotateCcw, CheckCircle, MessageSquare, X, UserCheck, Send, Download } from 'lucide-react';
 import { api } from '../api';
 import { useAuth } from '../context/AuthContext';
-import { generateJobMarkdown, generatePrintHTML, downloadFile } from '../utils/export';
+import { generateJobMarkdown, generateDetailedPDF, generateJobDetailCsv, downloadFile } from '../utils/export';
 
 export default function JobDetail() {
   const { id } = useParams();
@@ -12,6 +12,8 @@ export default function JobDetail() {
   const [job, setJob] = useState(null);
   const [lightboxImg, setLightboxImg] = useState(null);
   const [assignedUser, setAssignedUser] = useState(null);
+  const [commentText, setCommentText] = useState('');
+  const [sendingComment, setSendingComment] = useState(false);
 
   // Work session state
   const [session, setSession] = useState(null);
@@ -65,8 +67,14 @@ export default function JobDetail() {
     downloadFile(md, `${safeName}.md`);
   };
 
+  const handleExportCSV = () => {
+    const csv = generateJobDetailCsv(job);
+    const safeName = job.title.replace(/[<>:"/\\|?*]/g, '_');
+    downloadFile(csv, `${safeName}.csv`, 'text/csv;charset=utf-8');
+  };
+
   const handleExportPDF = () => {
-    const html = generatePrintHTML(job);
+    const html = generateDetailedPDF(job);
     const printHtml = html.replace(
       '</body>',
       `<script>window.addEventListener('load',function(){setTimeout(function(){window.print()},400)})<\/script></body>`
@@ -82,6 +90,31 @@ export default function JobDetail() {
       frame.contentDocument.write(html);
       frame.contentDocument.close();
       setTimeout(() => { frame.contentWindow.focus(); frame.contentWindow.print(); setTimeout(() => document.body.removeChild(frame), 1000); }, 500);
+    }
+  };
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return;
+    setSendingComment(true);
+    try {
+      await api.comments.create(id, {
+        user_id: currentUser?.id,
+        user_name: currentUser?.display_name || 'Anonim',
+        text: commentText.trim()
+      });
+      setCommentText('');
+      setJob(await api.jobs.get(id));
+    } catch (err) { alert(err.message); }
+    setSendingComment(false);
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (confirm('Bu yorumu silmek istediginize emin misiniz?')) {
+      try {
+        await api.comments.delete(commentId);
+        setJob(await api.jobs.get(id));
+      } catch (err) { alert(err.message); }
     }
   };
 
@@ -188,6 +221,7 @@ export default function JobDetail() {
         <Link to="/jobs" className="btn btn-secondary btn-sm"><ArrowLeft size={14} /> Islere Don</Link>
         <div className="export-actions">
           <button onClick={handleExportMD} className="btn btn-secondary btn-sm" title="Markdown olarak indir"><FileText size={14} /> .md</button>
+          <button onClick={handleExportCSV} className="btn btn-secondary btn-sm" title="CSV olarak indir"><Download size={14} /> .csv</button>
           <button onClick={handleExportPDF} className="btn btn-secondary btn-sm" title="PDF olarak yazdir"><Printer size={14} /> PDF</button>
         </div>
       </div>
@@ -431,6 +465,53 @@ export default function JobDetail() {
           </div>
         </>
       )}
+
+      {/* Comments */}
+      <div className="section-title">Yorumlar ({job.comments?.length || 0})</div>
+      <div className="card">
+        <form onSubmit={handleAddComment} className="comment-form">
+          <div className="comment-input-row">
+            <div className="comment-avatar">{currentUser?.display_name?.charAt(0).toUpperCase() || '?'}</div>
+            <input
+              type="text"
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              placeholder="Yorum yazin..."
+              className="form-input"
+              disabled={sendingComment}
+            />
+            <button type="submit" className="btn btn-primary btn-sm" disabled={sendingComment || !commentText.trim()}>
+              <Send size={14} />
+            </button>
+          </div>
+        </form>
+
+        {job.comments && job.comments.length > 0 ? (
+          <div className="comment-list">
+            {job.comments.map(c => (
+              <div key={c.id} className="comment-item">
+                <div className="comment-avatar">{c.user_name.charAt(0).toUpperCase()}</div>
+                <div className="comment-body">
+                  <div className="comment-header">
+                    <strong>{c.user_name}</strong>
+                    <span className="comment-date">{new Date(c.created_at).toLocaleString('tr-TR')}</span>
+                    {(currentUser?.role === 'admin' || currentUser?.id === c.user_id) && (
+                      <button className="btn-icon comment-delete" onClick={() => handleDeleteComment(c.id)} title="Yorumu sil">
+                        <Trash2 size={12} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="comment-text">{c.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: 16, color: 'var(--text-light)', fontSize: 13 }}>
+            Henuz yorum yok. Ilk yorumu siz yazin!
+          </div>
+        )}
+      </div>
 
       {/* Lightbox */}
       {lightboxImg && (
